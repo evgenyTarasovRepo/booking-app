@@ -30,19 +30,10 @@ public class User {
     @Column(name = "last_name")
     private String lastName;
 
-    @Column(name = "email")
+    @Column(name = "email", unique = true)
     private String email;
 
     @Column(name = "created_at")
-    private LocalDateTime userCreationDate;
-
-
-    public User(String firstName, String lastName, String email) {
-        this.id = UUID.randomUUID();
-        this.firstName = firstName;
-        this.lastName = lastName;
-        this.email = email;
-        this.userCreationDate = LocalDateTime.now();
-    }
+    private LocalDateTime createdAt;
 
 }
