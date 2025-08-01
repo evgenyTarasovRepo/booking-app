@@ -3,6 +3,7 @@ package com.booking.user.service.impl;
 import com.booking.user.converter.UserConverter;
 import com.booking.user.dto.UserCreationDto;
 import com.booking.user.dto.UserDto;
+import com.booking.user.dto.UserPatchDto;
 import com.booking.user.entity.User;
 import com.booking.user.exception.UserNotFoundException;
 import com.booking.user.repository.UserRepository;
@@ -36,6 +37,14 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    @Transactional
+    public UserDto update(UUID userId, UserPatchDto userForUpdate) {
+        log.info("Updating user: {}", userId);
+        var updatedUser = updateUserData(userId, userForUpdate);
+        return userConverter.toUserDto(updatedUser);
+    }
+
+    @Override
     public UserDto getById(UUID userId) {
         var userEntity = userRepository.findById(userId)
                 .orElseThrow(() -> UserNotFoundException.forUser(userId));
@@ -66,5 +75,15 @@ public class UserServiceImpl implements UserService {
 
         return new User(id, creationDto.firstName(),
                 creationDto.lastName(), creationDto.email(), createdAt);
+    }
+
+    private User updateUserData(UUID userId, UserPatchDto updatedUser) {
+        var userEntity = userRepository.findById(userId)
+                .orElseThrow(() -> UserNotFoundException.forUser(userId));
+        updatedUser.firstName().ifPresent(userEntity::setFirstName);
+        updatedUser.lastName().ifPresent(userEntity::setLastName);
+        updatedUser.email().ifPresent(userEntity::setEmail);
+
+        return userRepository.save(userEntity);
     }
 }
