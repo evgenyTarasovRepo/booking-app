@@ -46,7 +46,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public UserDto getById(UUID userId) {
-        var userEntity = userRepository.findById(userId)
+        var userEntity = userRepository.findByIdAndDeleteFalse(userId)
                 .orElseThrow(() -> UserNotFoundException.forUser(userId));
         return userConverter.toUserDto(userEntity);
     }
@@ -67,6 +67,12 @@ public class UserServiceImpl implements UserService {
         var userEntity = userRepository.findByEmail(email)
                 .orElseThrow(() -> UserNotFoundException.forUserEmail(email));
         return userConverter.toUserDto(userEntity);
+    }
+
+    @Override
+    public List<UserDto> getAll() {
+        var users = userRepository.findAll();
+        return userConverter.toUserDtoList(users);
     }
 
     private User toUserEntity(UserCreationDto creationDto) {

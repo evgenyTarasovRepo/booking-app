@@ -12,11 +12,12 @@ public interface UserService {
     UserDto create(UserCreationDto creationDto);
 
     UserDto update(UUID userId, UserPatchDto userForUpdate);
-    
 
     UserDto getById(UUID userId);
 
     List<UserDto> getByIds(Set<UUID> userIds);
 
     UserDto getByEmail(String login);
+
+    List<UserDto> getAll();
 }
