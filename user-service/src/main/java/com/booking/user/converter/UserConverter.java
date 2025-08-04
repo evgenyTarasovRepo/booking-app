@@ -16,7 +16,8 @@ public class UserConverter {
                 source.getFirstName(),
                 source.getLastName(),
                 source.getEmail(),
-                source.getCreatedAt()
+                source.getCreatedAt(),
+                source.getIsDeleted()
         );
     }
 

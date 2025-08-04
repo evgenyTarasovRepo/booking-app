@@ -12,6 +12,7 @@ public interface UserService {
     UserDto create(UserCreationDto creationDto);
 
     UserDto update(UUID userId, UserPatchDto userForUpdate);
+    
 
     UserDto getById(UUID userId);
 

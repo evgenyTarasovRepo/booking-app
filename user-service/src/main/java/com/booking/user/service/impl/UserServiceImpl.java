@@ -53,7 +53,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public List<UserDto> getByIds(Set<UUID> userIds) {
-        var users = userRepository.findByIdIn(userIds);
+        var users = userRepository.findByIdsAndDeleteFalse(userIds);
 
         if (users.isEmpty()) {
             throw UserNotFoundException.forUsers(userIds);
@@ -74,7 +74,7 @@ public class UserServiceImpl implements UserService {
         LocalDateTime createdAt = LocalDateTime.now();
 
         return new User(id, creationDto.firstName(),
-                creationDto.lastName(), creationDto.email(), createdAt);
+                creationDto.lastName(), creationDto.email(), createdAt, false);
     }
 
     private User updateUserData(UUID userId, UserPatchDto updatedUser) {

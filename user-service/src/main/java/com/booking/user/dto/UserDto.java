@@ -13,7 +13,9 @@ public record UserDto(
 
         String email,
 
-        LocalDateTime userCreationDate
+        LocalDateTime userCreationDate,
+
+        Boolean isDeleted
 ) {
 
 }
