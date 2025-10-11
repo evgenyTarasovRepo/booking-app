@@ -5,7 +5,7 @@ import com.booking.user.dto.UserCreationDto;
 import com.booking.user.dto.UserDto;
 import com.booking.user.dto.UserPatchDto;
 import com.booking.user.service.UserService;
-import lombok.RequiredArgsConstructor;
+import lombok.AllArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -15,7 +15,7 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping(Mappings.BASE_USER_URL)
-@RequiredArgsConstructor
+@AllArgsConstructor
 public class UserController {
 
     private UserService userService;
