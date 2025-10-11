@@ -75,6 +75,17 @@ public class UserServiceImpl implements UserService {
         return userConverter.toUserDtoList(users);
     }
 
+    @Override
+    public List<UserDto> getAllByIds(Set<UUID> ids){
+        var users = userRepository.findByIdIn(ids);
+
+        if (users.isEmpty()) {
+            throw UserNotFoundException.forUsers(ids);
+        }
+
+        return userConverter.toUserDtoList(users);
+    }
+
     private User toUserEntity(UserCreationDto creationDto) {
         UUID id = UUID.randomUUID();
         LocalDateTime createdAt = LocalDateTime.now();

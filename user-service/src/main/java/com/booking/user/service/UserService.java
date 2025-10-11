@@ -20,4 +20,6 @@ public interface UserService {
     UserDto getByEmail(String login);
 
     List<UserDto> getAll();
+
+    List<UserDto> getAllByIds(Set<UUID> ids);
 }
