@@ -1,6 +1,6 @@
 package com.booking.user.service.impl;
 
-import com.booking.user.converter.UserConverter;
+import com.booking.user.mapper.UserMapper;
 import com.booking.user.dto.UserCreationDto;
 import com.booking.user.dto.UserDto;
 import com.booking.user.dto.UserPatchDto;
@@ -10,10 +10,11 @@ import com.booking.user.repository.UserRepository;
 import com.booking.user.service.UserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -24,16 +25,16 @@ import java.util.UUID;
 public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
-    private final UserConverter userConverter;
+    private final UserMapper userMapper;
 
 
     @Override
     @Transactional
     public UserDto create(UserCreationDto creationDto) {
         log.info("Creating user with email: {}", creationDto.email());
-        var user = toUserEntity(creationDto);
+        var user = userMapper.toUser(creationDto);
         var saveUser = userRepository.save(user);
-        return userConverter.toUserDto(saveUser);
+        return userMapper.toUserDto(saveUser);
     }
 
     @Override
@@ -41,38 +42,38 @@ public class UserServiceImpl implements UserService {
     public UserDto update(UUID userId, UserPatchDto userForUpdate) {
         log.info("Updating user: {}", userId);
         var updatedUser = updateUserData(userId, userForUpdate);
-        return userConverter.toUserDto(updatedUser);
+        return userMapper.toUserDto(updatedUser);
     }
 
     @Override
     public UserDto getById(UUID userId) {
-        var userEntity = userRepository.findByIdAndDeleteFalse(userId)
+        var userEntity = userRepository.findByIdAndIsDeletedFalse(userId)
                 .orElseThrow(() -> UserNotFoundException.forUser(userId));
-        return userConverter.toUserDto(userEntity);
+        return userMapper.toUserDto(userEntity);
     }
 
     @Override
     public List<UserDto> getByIds(Set<UUID> userIds) {
-        var users = userRepository.findByIdsAndDeleteFalse(userIds);
+        var users = userRepository.findByIdInAndIsDeletedFalse(userIds);
 
         if (users.isEmpty()) {
             throw UserNotFoundException.forUsers(userIds);
         }
 
-        return userConverter.toUserDtoList(users);
+        return userMapper.toUserDtoList(users);
     }
 
     @Override
     public UserDto getByEmail(String email) {
         var userEntity = userRepository.findByEmail(email)
                 .orElseThrow(() -> UserNotFoundException.forUserEmail(email));
-        return userConverter.toUserDto(userEntity);
+        return userMapper.toUserDto(userEntity);
     }
 
     @Override
-    public List<UserDto> getAll() {
-        var users = userRepository.findAll();
-        return userConverter.toUserDtoList(users);
+    public Page<UserDto> getAll(Pageable pageable) {
+        var usersPage = userRepository.findAll(pageable);
+        return usersPage.map(userMapper::toUserDto);
     }
 
     @Override
@@ -83,23 +84,33 @@ public class UserServiceImpl implements UserService {
             throw UserNotFoundException.forUsers(ids);
         }
 
-        return userConverter.toUserDtoList(users);
+        return userMapper.toUserDtoList(users);
     }
 
-    private User toUserEntity(UserCreationDto creationDto) {
-        UUID id = UUID.randomUUID();
-        LocalDateTime createdAt = LocalDateTime.now();
+    @Override
+    @Transactional
+    public UserDto changeDeleteStateForUser(UUID userId, Boolean deleteState) {
+        var user = changeDeleteState(userId, deleteState);
 
-        return new User(id, creationDto.firstName(),
-                creationDto.lastName(), creationDto.email(), createdAt, false);
+        return userMapper.toUserDto(user);
     }
+
+    private User changeDeleteState(UUID userId, Boolean deleteState) {
+        var user = userRepository.findById(userId)
+                .orElseThrow(() -> UserNotFoundException.forUser(userId));
+
+        user.setIsDeleted(deleteState);
+
+        return userRepository.saveAndFlush(user);
+    }
+
 
     private User updateUserData(UUID userId, UserPatchDto updatedUser) {
-        var userEntity = userRepository.findById(userId)
+        var userEntity = userRepository.findByIdAndIsDeletedFalse(userId)
                 .orElseThrow(() -> UserNotFoundException.forUser(userId));
-        updatedUser.firstName().ifPresent(userEntity::setFirstName);
-        updatedUser.lastName().ifPresent(userEntity::setLastName);
-        updatedUser.email().ifPresent(userEntity::setEmail);
+        if (updatedUser.firstName() != null) userEntity.setFirstName(updatedUser.firstName());
+        if (updatedUser.lastName() != null) userEntity.setLastName(updatedUser.lastName());
+        if (updatedUser.email() != null) userEntity.setEmail(updatedUser.email());
 
         return userRepository.save(userEntity);
     }
