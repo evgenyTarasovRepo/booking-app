@@ -1,7 +1,6 @@
 package com.booking.user.repository;
 
 import com.booking.user.entity.User;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
@@ -55,9 +54,11 @@ public class UserRepositoryIntegrationTest {
     @Test
     void findUserById() {
         var user = getUser();
-        userRepository.save(user);
+        var foundUser = userRepository.save(user);
 
-        assertTrue(userRepository.findByIdAndDeleteFalse(user.getId()).isPresent());
+        assertTrue(userRepository.findByIdAndIsDeletedFalse(foundUser.getId()).isPresent());
+        assertThat(user.getEmail()).isEqualTo(foundUser.getEmail());
+        assertThat(user.getId()).isEqualTo(foundUser.getId());
     }
 
     @Test
@@ -73,15 +74,15 @@ public class UserRepositoryIntegrationTest {
 
     @Test
     void findUsersByIdAndDeletedFalseAndTrue() {
-        var user1 = new User(UUID.randomUUID(),"uName", "uLastname", "email@test.ru", LocalDateTime.now(), false);
-        var user2 = new User(UUID.randomUUID(),"uName1", "uLastname1", "email1@test.ru", LocalDateTime.now(), false);
-        var user3 = new User(UUID.randomUUID(),"uName2", "uLastname2", "email2@test.ru", LocalDateTime.now(), true);
+        var user1 = new User("uName", "uLastname", "email@test.ru", false);
+        var user2 = new User("uName1", "uLastname1", "email1@test.ru", false);
+        var user3 = new User("uName2", "uLastname2", "email2@test.ru", true);
 
         userRepository.save(user1);
         userRepository.save(user2);
         userRepository.save(user3);
 
-        var result = userRepository.findByIdsAndDeleteFalse(List.of(user1.getId(), user2.getId(), user3.getId()));
+        var result = userRepository.findByIdInAndIsDeletedFalse(List.of(user1.getId(), user2.getId(), user3.getId()));
 
         assertThat(result.size()).isEqualTo(2);
         assertTrue(result.contains(user1));
@@ -91,9 +92,9 @@ public class UserRepositoryIntegrationTest {
 
     @Test
     void findUsersByIdIds() {
-        var user1 = new User(UUID.randomUUID(),"uName", "uLastname", "email@test.ru", LocalDateTime.now(), false);
-        var user2 = new User(UUID.randomUUID(),"uName1", "uLastname1", "email1@test.ru", LocalDateTime.now(), false);
-        var user3 = new User(UUID.randomUUID(),"uName2", "uLastname2", "email2@test.ru", LocalDateTime.now(), true);
+        var user1 = new User("uName", "uLastname", "email@test.ru", false);
+        var user2 = new User("uName1", "uLastname1", "email1@test.ru", false);
+        var user3 = new User("uName2", "uLastname2", "email2@test.ru", true);
 
         userRepository.save(user1);
         userRepository.save(user2);
@@ -109,7 +110,7 @@ public class UserRepositoryIntegrationTest {
 
 
     private User getUser() {
-        return new User(UUID.randomUUID(), "TestName", "TestLastName", getRandomEmail(), LocalDateTime.now(), false);
+        return new User("TestName", "TestLastName", getRandomEmail(), false);
     }
 
     private String getRandomEmail() {
