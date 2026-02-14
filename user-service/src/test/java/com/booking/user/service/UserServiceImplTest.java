@@ -1,6 +1,6 @@
 package com.booking.user.service;
 
-import com.booking.user.converter.UserConverter;
+import com.booking.user.mapper.UserMapper;
 import com.booking.user.dto.UserCreationDto;
 import com.booking.user.dto.UserDto;
 import com.booking.user.dto.UserPatchDto;
@@ -14,6 +14,10 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -25,6 +29,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -35,7 +40,7 @@ public class UserServiceImplTest {
     private UserRepository userRepository;
 
     @Mock
-    private UserConverter userConverter;
+    private UserMapper userMapper;
 
     private UserServiceImpl userService;
 
@@ -55,15 +60,16 @@ public class UserServiceImplTest {
 
     @BeforeEach
     public void setUp() {
-        userService = new UserServiceImpl(userRepository, userConverter);
+        userService = new UserServiceImpl(userRepository, userMapper);
     }
 
     @Test
     void shouldCreateUser() {
         var user = createUser(userEmail, false);
 
-        when(userRepository.save(user)).thenReturn(user);
-        when(userConverter.toUserDto(user)).thenReturn(userDto);
+        when(userRepository.save(any(User.class))).thenReturn(user);
+        when(userMapper.toUser(userCreationDto)).thenReturn(user);
+        when(userMapper.toUserDto(user)).thenReturn(userDto);
 
         var response = userService.create(userCreationDto);
 
@@ -73,10 +79,14 @@ public class UserServiceImplTest {
     @Test
     void shouldUpdateUser() {
         var user = createUser(userEmail, false);
-        UserPatchDto updateUser = new UserPatchDto(Optional.of("updatedUserName"), Optional.of("updatedLastName"),
-                Optional.empty(), Optional.empty());
+        UserPatchDto updateUser = new UserPatchDto("updatedUserName", "updatedLastName",
+                null);
+        UserDto updatedDto = new UserDto(user.getId(), "updatedUserName", "updatedLastName", user.getEmail(),
+                user.getCreatedAt(), user.getIsDeleted());
 
-        when(userRepository.findById(user.getId())).thenReturn(Optional.of(user));
+        when(userRepository.findByIdAndIsDeletedFalse(user.getId())).thenReturn(Optional.of(user));
+        when(userRepository.save(any(User.class))).thenReturn(user);
+        when(userMapper.toUserDto(user)).thenReturn(updatedDto);
 
 
         var result = userService.update(user.getId(), updateUser);
@@ -100,8 +110,8 @@ public class UserServiceImplTest {
     void shouldReturnUserById() {
         var user = createUser(userEmail, false);
 
-        when(userRepository.findById(user.getId())).thenReturn(Optional.of(user));
-        when(userConverter.toUserDto(user)).thenReturn(userDto);
+        when(userRepository.findByIdAndIsDeletedFalse(user.getId())).thenReturn(Optional.of(user));
+        when(userMapper.toUserDto(user)).thenReturn(userDto);
 
         var result = userService.getById(user.getId());
 
@@ -113,9 +123,9 @@ public class UserServiceImplTest {
         var user = createUser(userEmail, false);
 
         when(userRepository.findByEmail(user.getEmail())).thenReturn(Optional.of(user));
-        when(userConverter.toUserDto(user)).thenReturn(userDto);
+        when(userMapper.toUserDto(user)).thenReturn(userDto);
 
-        var result = userService.getById(user.getId());
+        var result = userService.getByEmail(user.getEmail());
 
         assertThat(result.email()).isEqualTo(userEmail);
         assertThat(result).usingRecursiveComparison().isEqualTo(userDto);
@@ -129,8 +139,8 @@ public class UserServiceImplTest {
 
         List<UserDto> userDtoList = List.of(toDto(users.get(0)), toDto(users.get(1)), toDto(users.get(2)));
 
-        when(userRepository.findByIdsAndDeleteFalse(ids)).thenReturn(users);
-        when(userConverter.toUserDtoList(users)).thenReturn(userDtoList);
+        when(userRepository.findByIdInAndIsDeletedFalse(ids)).thenReturn(users);
+        when(userMapper.toUserDtoList(users)).thenReturn(userDtoList);
 
         var result = userService.getByIds(ids);
 
@@ -149,7 +159,7 @@ public class UserServiceImplTest {
         List<UserDto> userDtoList = List.of(toDto(users.get(0)), toDto(users.get(1)), toDto(users.get(2)));
 
         when(userRepository.findByIdIn(ids)).thenReturn(users);
-        when(userConverter.toUserDtoList(users)).thenReturn(userDtoList);
+        when(userMapper.toUserDtoList(users)).thenReturn(userDtoList);
 
         var result = userService.getAllByIds(ids);
 
@@ -161,21 +171,44 @@ public class UserServiceImplTest {
 
     @Test
     void shouldReturnAllUsers() {
-        List<User> users = List.of(createUser(userEmail, false), createUser(userEmail, true), createUser(userEmail, true));
+        Pageable pageable = PageRequest.of(0, 10);
+        List<User> users = List.of(
+                createUser(userEmail, false),
+                createUser(userEmail, true),
+                createUser(userEmail, true));
+        List<UserDto> userDtoList = List.of(
+                toDto(users.get(0)),
+                toDto(users.get(1)),
+                toDto(users.get(2)));
+        Page<User> userPage = new PageImpl<>(users, pageable, userDtoList.size());
 
-        Set<UUID> ids = Set.of(users.get(0).getId(), users.get(1).getId(), users.get(2).getId());
+        when(userRepository.findAll(pageable)).thenReturn(userPage);
 
-        List<UserDto> userDtoList = List.of(toDto(users.get(0)), toDto(users.get(1)), toDto(users.get(2)));
+        when(userMapper.toUserDto(users.get(0))).thenReturn(userDtoList.get(0));
+        when(userMapper.toUserDto(users.get(1))).thenReturn(userDtoList.get(1));
+        when(userMapper.toUserDto(users.get(2))).thenReturn(userDtoList.get(2));
 
-        when(userRepository.findAll()).thenReturn(users);
-        when(userConverter.toUserDtoList(users)).thenReturn(userDtoList);
+        var result = userService.getAll(pageable);
 
-        var result = userService.getAllByIds(ids);
+        // Дополнительные проверки пагинации
+        assertThat(result.getTotalElements()).isEqualTo(3);
+        assertThat(result.getNumber()).isEqualTo(0);  // номер страницы
+        assertThat(result.getSize()).isEqualTo(10);   // размер страницы
+    }
 
-        assertThat(result)
-                .hasSize(userDtoList.size())
-                .usingRecursiveComparison()
-                .isEqualTo(userDtoList);
+    @Test
+    void shouldSetDeleteTrueStateForUser() {
+        var user = createUser(userEmail, false);
+        var deleteDto = new UserDto(user.getId(), user.getFirstName(), user.getLastName(), user.getEmail(), user.getCreatedAt(), true);
+
+        when(userRepository.findById(user.getId())).thenReturn(Optional.of(user));
+        when(userRepository.saveAndFlush(user)).thenReturn(user);
+        when(userMapper.toUserDto(user)).thenReturn(deleteDto);
+
+        var result = userService.changeDeleteStateForUser(user.getId(), true);
+
+        assertThat(result).usingRecursiveComparison().isEqualTo(deleteDto);
+        assertThat(user.getIsDeleted()).isTrue();
     }
 
     @Test
@@ -183,8 +216,6 @@ public class UserServiceImplTest {
         var user = createUser(userEmail, false);
 
         var errMsg = String.format("User '%s' not found.", user.getId());
-
-        when(userRepository.findById(user.getId())).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> userService.getById(user.getId())).isInstanceOf(UserNotFoundException.class);
         assertThatThrownBy(() -> userService.getById(user.getId())).hasMessage(errMsg);
@@ -204,31 +235,27 @@ public class UserServiceImplTest {
 
     @Test
     void shouldThrowExceptionWhenUsersByIds() {
-        List<User> users = List.of(createUser(userEmail, false), createUser(userEmail, true), createUser(userEmail, true));
+        Set<UUID> ids = Set.of(UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID());
 
-        Set<UUID> ids = Set.of(users.get(0).getId(), users.get(1).getId(), users.get(2).getId());
-
-        var errMsg = String.format("Users '%s' not found.", ids);
-
-        when(userRepository.findByIdsAndDeleteFalse(ids)).thenReturn(List.of());
+        when(userRepository.findByIdInAndIsDeletedFalse(ids)).thenReturn(List.of());
 
         assertThatThrownBy(() -> userService.getByIds(ids))
                 .isInstanceOf(UserNotFoundException.class)
-                .hasMessage(errMsg);
+                .hasMessageContaining("not found");
     }
 
     @Test
-    void shouldThrowExceptionWhenGetAllUsers() {
-        List<User> users = List.of(createUser(userEmail, false), createUser(userEmail, true), createUser(userEmail, true));
+    void shouldReturnEmptyListWhenNoUsers() {
+        Pageable pageable = PageRequest.of(0, 10);
+        List<User> users = List.of();
 
-        Set<UUID> ids = Set.of(users.get(0).getId(), users.get(1).getId(), users.get(2).getId());
-        var errMsg = String.format("Users '%s' not found.", ids);
+        Page<User> userPage = new PageImpl<>(users, pageable, 0);
 
-        when(userRepository.findAll()).thenReturn(List.of());
+        when(userRepository.findAll(pageable)).thenReturn(userPage);
 
-        assertThatThrownBy(() -> userService.getAll())
-                .isInstanceOf(UserNotFoundException.class)
-                .hasMessage(errMsg);
+        var result = userService.getAll(pageable);
+
+        assertThat(result).isEmpty();
     }
 
     private User createUser(String email, boolean isDeleted) {
