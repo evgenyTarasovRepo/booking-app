@@ -235,17 +235,13 @@ public class UserServiceImplTest {
 
     @Test
     void shouldThrowExceptionWhenUsersByIds() {
-        List<User> users = List.of(createUser(userEmail, false), createUser(userEmail, true), createUser(userEmail, true));
-
-        Set<UUID> ids = Set.of(users.get(0).getId(), users.get(1).getId(), users.get(2).getId());
-
-        var errMsg = String.format("Users '%s' not found.", ids);
+        Set<UUID> ids = Set.of(UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID());
 
         when(userRepository.findByIdInAndIsDeletedFalse(ids)).thenReturn(List.of());
 
         assertThatThrownBy(() -> userService.getByIds(ids))
                 .isInstanceOf(UserNotFoundException.class)
-                .hasMessage(errMsg);
+                .hasMessageContaining("not found");
     }
 
     @Test

@@ -16,16 +16,8 @@ public interface UserMapper {
 
     List<UserDto> toUserDtoList(List<User> users);
 
-    @Mapping(target = "id", expression = "java(java.util.UUID.randomUUID())")
-    @Mapping(target = "firstName", source = "firstName")
-    @Mapping(target = "lastName", source = "lastName")
-    @Mapping(target = "email", source = "email")
-    @Mapping(target = "createdAt", expression = "java(java.time.LocalDateTime.now())")
+    @Mapping(target = "id", ignore = true)
+    @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "isDeleted", constant = "false")
     User toUser(UserCreationDto userDto);
-
-    @Mapping(target = "id", expression = "java(java.util.UUID.randomUUID())")
-    @Mapping(target = "createdAt", expression = "java(java.time.LocalDateTime.now())")
-    @Mapping(target = "isDeleted", source = "isDeleted")
-    User toUserEntity(UserDto userDto);
 }

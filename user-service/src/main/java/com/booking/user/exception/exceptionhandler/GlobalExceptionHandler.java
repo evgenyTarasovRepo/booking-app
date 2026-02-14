@@ -29,23 +29,28 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         return createProblemDetail(ex.getMessage(), HttpStatus.NOT_FOUND, request);
     }
 
-    @ExceptionHandler(MethodArgumentNotValidException.class)
-    @ResponseStatus(HttpStatus.BAD_REQUEST)
-    public ResponseEntity<Object> handleMethodArgumentNotValidException(MethodArgumentNotValidException ex, HttpHeaders headers, HttpStatusCode status, WebRequest request) {
-        log.warn("MethodArgumentNotValidException: {}", ex.getMessage());
-        var pd = ex.getBody();
+    @Override
+    protected ResponseEntity<Object> handleMethodArgumentNotValid(
+            MethodArgumentNotValidException ex,
+            HttpHeaders headers,
+            HttpStatusCode status,
+            WebRequest request) {
+
+        log.warn("Validation error: {}", ex.getMessage());
+
         Map<String, String> errors = new HashMap<>();
-        ex.getBindingResult().getGlobalErrors().forEach(e -> {
-            errors.put(e.getObjectName(), e.getDefaultMessage());
-        });
-        ex.getBindingResult().getFieldErrors().forEach(e -> {
-            errors.put(e.getField(), e.getDefaultMessage());
-        });
-        log.error("Intercepted MethodArgumentNotValidException. Errors: {}", errors);
+        ex.getBindingResult().getFieldErrors().forEach(error ->
+                errors.put(error.getField(), error.getDefaultMessage())
+        );
+
+        ProblemDetail pd = ProblemDetail.forStatus(HttpStatus.BAD_REQUEST);
+        pd.setTitle("Validation Error");
+        pd.setDetail("Invalid request parameters");
         pd.setProperty("invalid_params", errors);
-        pd.setStatus(HttpStatus.BAD_REQUEST);
+        pd.setProperty("timestamp", Instant.now());
         pd.setInstance(URI.create(((ServletWebRequest) request).getRequest().getRequestURI()));
-        return handleExceptionInternal(ex, pd, headers, status, request);
+
+        return ResponseEntity.badRequest().body(pd);
     }
 
     @ExceptionHandler(DataIntegrityViolationException.class)
