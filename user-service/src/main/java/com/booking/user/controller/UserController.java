@@ -4,9 +4,11 @@ import com.booking.user.dto.UserCreationDto;
 import com.booking.user.dto.UserDto;
 import com.booking.user.dto.UserPatchDto;
 import com.booking.user.service.UserService;
+import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -22,8 +24,8 @@ public class UserController {
     private UserService userService;
 
     @PostMapping
-    public ResponseEntity<UserDto> createUser(@RequestBody UserCreationDto userCreationDto) {
-        return ResponseEntity.ok(userService.create(userCreationDto));
+    public ResponseEntity<UserDto> createUser(@RequestBody @Valid UserCreationDto userCreationDto) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(userService.create(userCreationDto));
     }
 
     @GetMapping("/{userId}")
@@ -32,29 +34,29 @@ public class UserController {
     }
 
     @PostMapping("/batch")
-    public ResponseEntity<List<UserDto>> getUserByIds(@RequestBody Set<UUID> usersIds) {
+    public ResponseEntity<List<UserDto>> getUsersByIds(@RequestBody Set<UUID> usersIds) {
         return ResponseEntity.ok(userService.getByIds(usersIds));
     }
 
     @GetMapping
-    public Page<UserDto> getAll(
+    public ResponseEntity<Page<UserDto>> getAll(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
-        return userService.getAll(PageRequest.of(page, size));
+        return ResponseEntity.ok(userService.getAll(PageRequest.of(page, size)));
     }
 
     @PatchMapping("/{userId}")
-    public ResponseEntity<UserDto> updateOrLogicalDelete(@PathVariable("userId") UUID userId,
+    public ResponseEntity<UserDto> updateUser(@PathVariable("userId") UUID userId,
                                                          @RequestBody UserPatchDto userPatchDto) {
         return ResponseEntity.ok(userService.update(userId, userPatchDto));
     }
 
-    @GetMapping("{email}")
+    @GetMapping("/by-email/{email}")
     public ResponseEntity<UserDto> getUserByEmail(@PathVariable("email") String email) {
         return  ResponseEntity.ok(userService.getByEmail(email));
     }
 
-    @PatchMapping("/{userId}")
+    @PatchMapping("/{userId}/delete")
     public ResponseEntity<UserDto> changeDeleteStateForUser(@PathVariable("userId") UUID userId, @RequestParam("deleted") Boolean deleted) {
         return ResponseEntity.ok(userService.changeDeleteStateForUser(userId, deleted));
     }
