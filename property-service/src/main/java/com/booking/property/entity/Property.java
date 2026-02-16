@@ -36,19 +36,19 @@ public class Property {
     @Enumerated(EnumType.STRING)
     private PropertyType propertyType;
 
-    @Column(name = "pricePerNight", nullable = false)
+    @Column(name = "price_per_night", nullable = false)
     private BigDecimal pricePerNight;
 
-    @Column(name = "maxGuests", nullable = false)
+    @Column(name = "max_guests", nullable = false)
     private Integer maxGuests;
 
-    @Column(name = "ownerId", nullable = false)
+    @Column(name = "owner_id", nullable = false)
     private UUID ownerId;
 
-    @Column(name = "isActive", nullable = false)
+    @Column(name = "is_active", nullable = false)
     private Boolean isActive;
 
-    @Column(name = "createdAt", nullable = false)
+    @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
 
     public Property(String name, String description, String address, String city, String country, PropertyType propertyType, BigDecimal pricePerNight, Integer maxGuests, UUID ownerId, Boolean isActive) {
