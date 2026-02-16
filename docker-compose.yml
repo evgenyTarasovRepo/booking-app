@@ -11,7 +11,7 @@ services:
       POSTGRES_PASSWORD: password
 
     ports:
-      - "5433:5432"
+      - "15434:5432"
 
     volumes:
       - user-db-data:/var/lib/postgresql/data # save DB data between reloading
