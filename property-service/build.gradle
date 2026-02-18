@@ -11,6 +11,7 @@ dependencies {
     implementation 'org.postgresql:postgresql'
     implementation 'org.flywaydb:flyway-core'
     implementation 'org.apache.kafka:kafka-clients'
+    implementation 'org.mapstruct:mapstruct:1.5.5.Final'
     implementation project(':common-lib')
 
     annotationProcessor 'org.mapstruct:mapstruct-processor:1.5.5.Final'
