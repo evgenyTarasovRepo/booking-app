@@ -1,8 +1,7 @@
 package com.booking.property.entity;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -12,6 +11,8 @@ import java.util.UUID;
 @Table(name = "properties")
 @AllArgsConstructor
 @NoArgsConstructor
+@Getter
+@Setter
 public class Property {
 
     @Id
@@ -64,9 +65,21 @@ public class Property {
         this.isActive = isActive;
     }
 
-
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Property property = (Property) o;
+        return id != null && id.equals(property.id);
+    }
+
+    @Override
+    public int hashCode() {
+        return getClass().hashCode();
     }
 }
