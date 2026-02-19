@@ -39,10 +39,7 @@ public record PropertyCreationDto(
         @Min(1)
         Integer maxGuests,
 
-        @NotNull(message = "Guest quantity is required")
-        UUID ownerId,
-
-        @NotNull(message = "Active flag is required")
-        Boolean isActive
+        @NotNull(message = "Owner ID is required")
+        UUID ownerId
 ) {
 }

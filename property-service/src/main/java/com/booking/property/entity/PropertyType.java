@@ -17,7 +17,7 @@ public enum PropertyType {
         try {
             return PropertyType.valueOf(propertyType);
         } catch (IllegalArgumentException e) {
-            var msg = "Failed to crete Property from string: %s".formatted(propertyType);
+            var msg = "Failed to create Property from string: %s".formatted(propertyType);
             throw new PropertyServiceException(msg, HttpStatus.BAD_REQUEST);
         }
     }

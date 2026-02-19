@@ -37,7 +37,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     public ProblemDetail handleOwnerNotFound(OwnerNotFoundException ex, WebRequest request) {
         log.warn("Owner not found {}", ex.getMessage());
 
-        return createProblemDetail("User service is temporarily unavailable.", HttpStatus.NOT_FOUND, request);
+        return createProblemDetail(ex.getMessage(), HttpStatus.NOT_FOUND, request);
     }
 
     @ExceptionHandler(UserServiceUnavailableException.class)
