@@ -19,7 +19,7 @@ public interface PropertyService {
 
     Page<PropertyDto> getAll(Pageable pageable);
 
-    List<PropertyDto> getPropertiesByOwner(UUID id);
+    List<PropertyDto> getPropertiesByOwnerId(UUID id);
 
     List<PropertyDto> getAllPropertiesByIds(Collection<UUID> ids);
 

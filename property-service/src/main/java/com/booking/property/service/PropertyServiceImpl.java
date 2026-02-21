@@ -45,7 +45,6 @@ public class PropertyServiceImpl implements PropertyService {
         log.info("Property created with id {}", saved.getId());
 
         return propertyMapper.toPropertyDto(saved);
-
     }
 
     @Override
@@ -77,7 +76,7 @@ public class PropertyServiceImpl implements PropertyService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<PropertyDto> getPropertiesByOwner(UUID id) {
+    public List<PropertyDto> getPropertiesByOwnerId(UUID id) {
         log.debug("Getting properties for owner {}", id);
 
         var properties = propertyRepository.findAllByOwnerId(id);
