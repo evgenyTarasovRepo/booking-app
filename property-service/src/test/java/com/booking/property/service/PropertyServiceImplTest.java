@@ -13,9 +13,9 @@ import com.booking.property.exception.UserServiceUnavailableException;
 import com.booking.property.mapper.PropertyMapper;
 import com.booking.property.repository.PropertyRepository;
 import feign.FeignException;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Page;
@@ -31,10 +31,8 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 public class PropertyServiceImplTest {
@@ -48,12 +46,9 @@ public class PropertyServiceImplTest {
     @Mock
     private PropertyMapper propertyMapper;
 
+    @InjectMocks
     PropertyServiceImpl propertyService;
 
-    @BeforeEach
-    void setUp() {
-        propertyService = new PropertyServiceImpl(propertyRepository, propertyMapper, userServiceClient);
-    }
 
     private final UUID userId = UUID.randomUUID();
     private final UUID propertyId = UUID.randomUUID();
@@ -64,7 +59,7 @@ public class PropertyServiceImplTest {
 
 
     @Test
-    void shouldCreateProperty() {
+    void createProperty_WhenOwnerExists_ShouldReturnPropertyDto() {
         var property = createProperty();
         property.setId(propertyId);
         var propertyDto = createPropertyDto(propertyId, property.getOwnerId(), property.getCreatedAt(), property.getIsActive());
@@ -77,10 +72,15 @@ public class PropertyServiceImplTest {
         var result = propertyService.createProperty(propertyCreationDto);
 
         assertThat(result).usingRecursiveComparison().isEqualTo(propertyDto);
+
+        verify(userServiceClient).getUserById(userId);
+        verify(propertyMapper).toPropertyEntity(propertyCreationDto);
+        verify(propertyRepository).saveAndFlush(property);
+        verify(propertyMapper).toPropertyDto(property);
     }
 
     @Test
-    void shouldThrowOwnerNotFoundException_WhenUserNotFound() {
+    void createProperty_WhenOwnerIsDeleted_ShouldThrowOwnerNotFoundException() {
 
         when(userServiceClient.getUserById(userId)).thenReturn(new UserDto(userId, "Name", "Lastname", "email@test.com", LocalDateTime.now(), true));
 
@@ -90,7 +90,7 @@ public class PropertyServiceImplTest {
     }
 
     @Test
-    void shouldThrowFeignNotFoundException_WhenUserNotFound() {
+    void createProperty_WhenUserServiceReturns404_ShouldThrowOwnerNotFoundException() {
 
         when(userServiceClient.getUserById(userId)).thenThrow(FeignException.NotFound.class);
 
@@ -100,7 +100,7 @@ public class PropertyServiceImplTest {
     }
 
     @Test
-    void shouldThrowFeignException_WhenUserServiceIsUnavailable() {
+    void createProperty_WhenUserServiceUnavailable_ShouldThrowUserServiceUnavailableException() {
 
         when(userServiceClient.getUserById(userId)).thenThrow(FeignException.class);
 
@@ -110,7 +110,7 @@ public class PropertyServiceImplTest {
     }
 
     @Test
-    void shouldReturnPropertyById() {
+    void getPropertyById_WhenExists_ShouldReturnPropertyDto() {
         var property = createProperty();
         property.setId(propertyId);
         var propertyDto = createPropertyDto(propertyId, property.getOwnerId(), property.getCreatedAt(), property.getIsActive());
@@ -121,6 +121,20 @@ public class PropertyServiceImplTest {
         var result = propertyService.getPropertyById(propertyId);
 
         assertThat(result).usingRecursiveComparison().isEqualTo(propertyDto);
+    }
+
+    @Test
+    void getPropertyById_WhenNotExists_ShouldThrowPropertyNotFoundException() {
+
+        when(propertyRepository.findById(propertyId)).thenReturn(Optional.empty());
+
+
+        assertThatThrownBy(() -> propertyService.getPropertyById(propertyId))
+                .isInstanceOf(PropertyNotFoundException.class)
+                .hasMessageContaining(propertyId.toString());
+
+        verify(propertyRepository).findById(propertyId);
+        verifyNoInteractions(propertyMapper);
     }
 
     @Test
@@ -193,7 +207,7 @@ public class PropertyServiceImplTest {
     }
 
     @Test
-    void getAllPropertiesByIds() {
+    void getAllPropertiesByIds_WhenAllExist_ShouldReturnList() {
         var property1 = createProperty();
         property1.setId(propertyId);
         var property2 = createProperty();
@@ -218,6 +232,19 @@ public class PropertyServiceImplTest {
                 .hasSize(dtoList.size())
                 .usingRecursiveComparison()
                 .isEqualTo(dtoList);
+    }
+
+    @Test
+    void getAllPropertiesByIds_WhenNoneFound_ShouldThrowPropertyNotFoundException() {
+        var ids = List.of(UUID.randomUUID(), UUID.randomUUID());
+        when(propertyRepository.findAllByIdIn(ids)).thenReturn(List.of());
+
+        assertThatThrownBy(() -> propertyService.getAllPropertiesByIds(ids))
+                .isInstanceOf(PropertyNotFoundException.class)
+                .hasMessageContaining("not found");
+
+        verify(propertyRepository).findAllByIdIn(ids);
+        verifyNoInteractions(propertyMapper);
     }
 
     @Test
@@ -261,7 +288,17 @@ public class PropertyServiceImplTest {
         var result = propertyService.changeActivePropertyState(propertyId, false);
 
         assertThat(result).usingRecursiveComparison().isEqualTo(propertyDto);
-        assertFalse(result.isActive());
+        assertThat(result.isActive()).isFalse();
+    }
+
+    @Test
+    void changeActivePropertyState_WhenPropertyNotExists_ShouldThrowException() {
+
+        when(propertyRepository.findById(propertyId)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> propertyService.changeActivePropertyState(propertyId, false))
+                .isInstanceOf(PropertyNotFoundException.class)
+                .hasMessageContaining(propertyId.toString());
     }
 
     private Property createProperty() {
