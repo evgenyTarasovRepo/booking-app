@@ -75,7 +75,7 @@ public class PropertyController {
     @PatchMapping("/{propertyId}/status")
     public ResponseEntity<PropertyDto> changePropertyState(
             @PathVariable("propertyId") UUID propertyId,
-            @RequestParam Boolean state) {
+            @RequestParam("active") Boolean state) {
         log.info("Change state for property {}", propertyId);
         return ResponseEntity.ok(propertyService.changeActivePropertyState(propertyId, state));
     }

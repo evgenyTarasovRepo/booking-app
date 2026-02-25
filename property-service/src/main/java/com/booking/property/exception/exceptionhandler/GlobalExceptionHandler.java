@@ -4,6 +4,7 @@ import com.booking.property.exception.OwnerNotFoundException;
 import com.booking.property.exception.PropertyNotFoundException;
 import com.booking.property.exception.UserServiceUnavailableException;
 import feign.FeignException;
+import jakarta.validation.ConstraintViolationException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.*;
@@ -33,11 +34,11 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     }
 
     @ExceptionHandler(OwnerNotFoundException.class)
-    @ResponseStatus(HttpStatus.NOT_FOUND)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
     public ProblemDetail handleOwnerNotFound(OwnerNotFoundException ex, WebRequest request) {
         log.warn("Owner not found {}", ex.getMessage());
 
-        return createProblemDetail(ex.getMessage(), HttpStatus.NOT_FOUND, request);
+        return createProblemDetail(ex.getMessage(), HttpStatus.BAD_REQUEST, request);
     }
 
     @ExceptionHandler(UserServiceUnavailableException.class)
@@ -60,14 +61,32 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
                 errors.put(error.getField(), error.getDefaultMessage())
         );
 
-        ProblemDetail pd = ProblemDetail.forStatus(HttpStatus.BAD_REQUEST);
+        ProblemDetail pd = createProblemDetail(ex.getMessage(), HttpStatus.BAD_REQUEST, request);
         pd.setTitle("Validation Error");
         pd.setDetail("Invalid request parameters");
         pd.setProperty("invalid_params", errors);
-        pd.setProperty("timestamp", Instant.now());
-        pd.setInstance(URI.create(((ServletWebRequest) request).getRequest().getRequestURI()));
 
         return ResponseEntity.badRequest().body(pd);
+    }
+
+    @ExceptionHandler(ConstraintViolationException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ProblemDetail handleConstraintViolation(ConstraintViolationException ex, WebRequest request) {
+        log.warn("Validation error: {}", ex.getMessage());
+
+        Map<String, String> errors = new HashMap<>();
+        ex.getConstraintViolations().forEach(violation -> {
+            var fieldName = extractFieldName(violation.getPropertyPath().toString());
+            var message = violation.getMessage();
+            errors.put(fieldName, message);
+        });
+
+        ProblemDetail pd = createProblemDetail(ex.getMessage(), HttpStatus.BAD_REQUEST, request);
+        pd.setTitle("Validation Error");
+        pd.setDetail("Invalid request parameters");
+        pd.setProperty("invalid_params", errors);
+
+        return pd;
     }
 
     @ExceptionHandler(DataIntegrityViolationException.class)
@@ -102,5 +121,10 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         pd.setProperty("timestamp", Instant.now());
         pd.setInstance(URI.create(((ServletWebRequest) request).getRequest().getRequestURI()));
         return pd;
+    }
+
+    private String extractFieldName(String propertyPath) {
+        String[] parts = propertyPath.split("\\.");
+        return parts[parts.length - 1];
     }
 }
