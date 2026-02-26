@@ -100,10 +100,10 @@ public class PropertyServiceImpl implements PropertyService {
 
     @Override
     @Transactional
-    public PropertyDto changeActivePropertyState(UUID id, Boolean state) {
-        log.info("Changing property {} active state to {}", id, state);
+    public PropertyDto changeActivePropertyStatus(UUID id, Boolean status) {
+        log.info("Changing property {} active state to {}", id, status);
 
-        var property = changeActiveState(id, state);
+        var property = changeActiveState(id, status);
         var savedProperty = propertyRepository.saveAndFlush(property);
         return propertyMapper.toPropertyDto(savedProperty);
     }
@@ -133,10 +133,10 @@ public class PropertyServiceImpl implements PropertyService {
         }
     }
 
-    private Property changeActiveState(UUID id, Boolean state) {
+    private Property changeActiveState(UUID id, Boolean status) {
         var property = propertyRepository.findById(id).orElseThrow(() -> PropertyNotFoundException.forProperty(id));
 
-        property.setIsActive(state);
+        property.setIsActive(status);
 
         log.debug("Property {} updated successfully", id);
         return property;
