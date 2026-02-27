@@ -2,14 +2,27 @@ package com.booking.property.entity;
 
 import com.booking.property.exception.PropertyServiceException;
 import com.fasterxml.jackson.annotation.JsonCreator;
+import io.swagger.v3.oas.annotations.media.Schema;
 import org.springframework.http.HttpStatus;
 
+@Schema(description = "Type of property")
 public enum PropertyType {
+    @Schema(description = "Hotel room or suite")
     HOTEL,
+
+    @Schema(description = "Apartment or flat")
     APARTMENT,
+
+    @Schema(description = "Entire house")
     HOUSE,
+
+    @Schema(description = "Single room in shared property")
     ROOM,
+
+    @Schema(description = "Small vacation house, typically on beach")
     BUNGALOW,
+
+    @Schema(description = "Luxury standalone house with amenities")
     VILLA;
 
     @JsonCreator

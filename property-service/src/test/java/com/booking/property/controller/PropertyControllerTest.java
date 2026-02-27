@@ -279,19 +279,19 @@ public class PropertyControllerTest {
     void changePropertyStatus_WhenDeactivating_ShouldReturnInactiveProperty() throws Exception {
         var propertyDto = createPropertyDto(PROPERTY_ID, OWNER_ID, LocalDateTime.now(), false);
 
-        when(propertyService.changeActivePropertyState(PROPERTY_ID, false)).thenReturn(propertyDto);
+        when(propertyService.changeActivePropertyStatus(PROPERTY_ID, false)).thenReturn(propertyDto);
 
         mockMvc.perform(patch("/api/v1/properties/{propertyId}/status", PROPERTY_ID)
                     .param("active", "false"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.isActive").value(false));
 
-        verify(propertyService).changeActivePropertyState(PROPERTY_ID, false);
+        verify(propertyService).changeActivePropertyStatus(PROPERTY_ID, false);
     }
 
     @Test
     void changePropertyStatus_WhenPropertyNotFound_ShouldReturn404() throws Exception {
-        when(propertyService.changeActivePropertyState(PROPERTY_ID, true))
+        when(propertyService.changeActivePropertyStatus(PROPERTY_ID, true))
                 .thenThrow(PropertyNotFoundException.forProperty(PROPERTY_ID));
 
         mockMvc.perform(patch("/api/v1/properties/{propertyId}/status", PROPERTY_ID)

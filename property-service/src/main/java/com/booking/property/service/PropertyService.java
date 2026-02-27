@@ -23,5 +23,5 @@ public interface PropertyService {
 
     List<PropertyDto> getAllPropertiesByIds(Collection<UUID> ids);
 
-    PropertyDto changeActivePropertyState(UUID id, Boolean state);
+    PropertyDto changeActivePropertyStatus(UUID id, Boolean status);
 }

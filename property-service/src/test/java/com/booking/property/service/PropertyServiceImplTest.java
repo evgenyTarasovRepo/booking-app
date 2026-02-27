@@ -274,7 +274,7 @@ public class PropertyServiceImplTest {
     }
 
     @Test
-    void shouldChangeActivePropertyState() {
+    void shouldChangeActivePropertyStatus() {
         var property = createProperty();
         property.setId(propertyId);
         var propertyDto = createPropertyDto(propertyId, property.getOwnerId(), property.getCreatedAt(), false);
@@ -285,7 +285,7 @@ public class PropertyServiceImplTest {
         when(propertyRepository.saveAndFlush(property)).thenReturn(property);
         when(propertyMapper.toPropertyDto(property)).thenReturn(propertyDto);
 
-        var result = propertyService.changeActivePropertyState(propertyId, false);
+        var result = propertyService.changeActivePropertyStatus(propertyId, false);
 
         assertThat(result).usingRecursiveComparison().isEqualTo(propertyDto);
         assertThat(result.isActive()).isFalse();
@@ -296,7 +296,7 @@ public class PropertyServiceImplTest {
 
         when(propertyRepository.findById(propertyId)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> propertyService.changeActivePropertyState(propertyId, false))
+        assertThatThrownBy(() -> propertyService.changeActivePropertyStatus(propertyId, false))
                 .isInstanceOf(PropertyNotFoundException.class)
                 .hasMessageContaining(propertyId.toString());
     }
