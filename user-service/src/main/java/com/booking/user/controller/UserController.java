@@ -7,7 +7,9 @@ import com.booking.user.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
-import lombok.AllArgsConstructor;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
+import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
@@ -20,11 +22,11 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/v1/users")
-@AllArgsConstructor
+@RequiredArgsConstructor
 @Tag(name = "Users", description = "API for User Service")
 public class UserController {
 
-    private UserService userService;
+    private final UserService userService;
 
     @Operation(summary = "Create user", description = "Method for user creation")
     @PostMapping
@@ -47,8 +49,8 @@ public class UserController {
     @Operation(summary = "Get all users", description = "Returns a paginated list of all users")
     @GetMapping
     public ResponseEntity<Page<UserDto>> getAll(
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size) {
+            @RequestParam(defaultValue = "0") @Min(0) int page,
+            @RequestParam(defaultValue = "20") @Min(1) @Max(100) int size) {
         return ResponseEntity.ok(userService.getAll(PageRequest.of(page, size)));
     }
 
