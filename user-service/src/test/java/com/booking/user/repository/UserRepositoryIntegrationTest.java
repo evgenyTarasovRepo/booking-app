@@ -11,7 +11,6 @@ import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -56,7 +55,7 @@ public class UserRepositoryIntegrationTest {
         var user = getUser();
         var foundUser = userRepository.save(user);
 
-        assertTrue(userRepository.findByIdAndIsDeletedFalse(foundUser.getId()).isPresent());
+        assertTrue(userRepository.findByIdAndDeletedFalse(foundUser.getId()).isPresent());
         assertThat(user.getEmail()).isEqualTo(foundUser.getEmail());
         assertThat(user.getId()).isEqualTo(foundUser.getId());
     }
@@ -82,7 +81,7 @@ public class UserRepositoryIntegrationTest {
         userRepository.save(user2);
         userRepository.save(user3);
 
-        var result = userRepository.findByIdInAndIsDeletedFalse(List.of(user1.getId(), user2.getId(), user3.getId()));
+        var result = userRepository.findByIdInAndDeletedFalse(List.of(user1.getId(), user2.getId(), user3.getId()));
 
         assertThat(result.size()).isEqualTo(2);
         assertTrue(result.contains(user1));

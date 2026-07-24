@@ -12,12 +12,12 @@ import java.util.List;
 public interface UserMapper {
 
     @Mapping(target = "userCreationDate", source = "createdAt")
+    @Mapping(target = "isDeleted", source = "deleted")
     UserDto toUserDto(User user);
 
     List<UserDto> toUserDtoList(List<User> users);
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
-    @Mapping(target = "isDeleted", constant = "false")
     User toUser(UserCreationDto userDto);
 }

@@ -18,5 +18,6 @@ public record UserPatchDto(
 
         @Schema(description = "New user email", example = "newTest@gmail.com", maxLength = 255)
         @Email(message = "Invalid email format")
+        @Size(max = 255, message = "User email must be at most 255 characters")
         String email
 ) {}

@@ -1,17 +1,16 @@
 package com.booking.user.service;
 
-import com.booking.user.mapper.UserMapper;
 import com.booking.user.dto.UserCreationDto;
 import com.booking.user.dto.UserDto;
 import com.booking.user.dto.UserPatchDto;
 import com.booking.user.entity.User;
 import com.booking.user.exception.UserNotFoundException;
+import com.booking.user.mapper.UserMapper;
 import com.booking.user.repository.UserRepository;
 import com.booking.user.service.impl.UserServiceImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Page;
@@ -30,8 +29,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 public class UserServiceImplTest {
@@ -82,35 +80,31 @@ public class UserServiceImplTest {
         UserPatchDto updateUser = new UserPatchDto("updatedUserName", "updatedLastName",
                 null);
         UserDto updatedDto = new UserDto(user.getId(), "updatedUserName", "updatedLastName", user.getEmail(),
-                user.getCreatedAt(), user.getIsDeleted());
+                user.getCreatedAt(), user.isDeleted());
 
-        when(userRepository.findByIdAndIsDeletedFalse(user.getId())).thenReturn(Optional.of(user));
-        when(userRepository.save(any(User.class))).thenReturn(user);
+        when(userRepository.findByIdAndDeletedFalse(user.getId())).thenReturn(Optional.of(user));
         when(userMapper.toUserDto(user)).thenReturn(updatedDto);
 
-
         var result = userService.update(user.getId(), updateUser);
-
-        ArgumentCaptor<User> captor = ArgumentCaptor.forClass(User.class);
-        verify(userRepository).save(captor.capture());
-        User saved = captor.getValue();
-
-        assertEquals("updatedUserName", saved.getFirstName());
-        assertEquals("updatedLastName", saved.getLastName());
-        assertEquals(userEmail, saved.getEmail());
-        assertFalse(saved.getIsDeleted());
 
         assertEquals("updatedUserName", result.firstName());
         assertEquals("updatedLastName", result.lastName());
         assertEquals(userEmail, result.email());
         assertFalse(result.isDeleted());
+
+        assertEquals("updatedUserName", user.getFirstName());
+        assertEquals("updatedLastName", user.getLastName());
+        assertEquals(userEmail, user.getEmail());
+        assertFalse(user.isDeleted());
+
+        verify(userRepository, never()).save(any(User.class));
     }
 
     @Test
     void shouldReturnUserById() {
         var user = createUser(userEmail, false);
 
-        when(userRepository.findByIdAndIsDeletedFalse(user.getId())).thenReturn(Optional.of(user));
+        when(userRepository.findByIdAndDeletedFalse(user.getId())).thenReturn(Optional.of(user));
         when(userMapper.toUserDto(user)).thenReturn(userDto);
 
         var result = userService.getById(user.getId());
@@ -139,10 +133,10 @@ public class UserServiceImplTest {
 
         List<UserDto> userDtoList = List.of(toDto(users.get(0)), toDto(users.get(1)), toDto(users.get(2)));
 
-        when(userRepository.findByIdInAndIsDeletedFalse(ids)).thenReturn(users);
+        when(userRepository.findByIdInAndDeletedFalse(ids)).thenReturn(users);
         when(userMapper.toUserDtoList(users)).thenReturn(userDtoList);
 
-        var result = userService.getByIds(ids);
+        var result = userService.getActiveUsersByIds(ids);
 
         assertThat(result)
                 .hasSize(userDtoList.size())
@@ -202,13 +196,12 @@ public class UserServiceImplTest {
         var deleteDto = new UserDto(user.getId(), user.getFirstName(), user.getLastName(), user.getEmail(), user.getCreatedAt(), true);
 
         when(userRepository.findById(user.getId())).thenReturn(Optional.of(user));
-        when(userRepository.saveAndFlush(user)).thenReturn(user);
         when(userMapper.toUserDto(user)).thenReturn(deleteDto);
 
         var result = userService.changeDeleteStateForUser(user.getId(), true);
 
         assertThat(result).usingRecursiveComparison().isEqualTo(deleteDto);
-        assertThat(user.getIsDeleted()).isTrue();
+        assertThat(user.isDeleted()).isTrue();
     }
 
     @Test
@@ -237,9 +230,9 @@ public class UserServiceImplTest {
     void shouldThrowExceptionWhenUsersByIds() {
         Set<UUID> ids = Set.of(UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID());
 
-        when(userRepository.findByIdInAndIsDeletedFalse(ids)).thenReturn(List.of());
+        when(userRepository.findByIdInAndDeletedFalse(ids)).thenReturn(List.of());
 
-        assertThatThrownBy(() -> userService.getByIds(ids))
+        assertThatThrownBy(() -> userService.getActiveUsersByIds(ids))
                 .isInstanceOf(UserNotFoundException.class)
                 .hasMessageContaining("not found");
     }
@@ -264,7 +257,7 @@ public class UserServiceImplTest {
 
     private UserDto toDto(User user) {
         return new UserDto(user.getId(), user.getFirstName(), user.getLastName(),
-                user.getEmail(), user.getCreatedAt(), user.getIsDeleted());
+                user.getEmail(), user.getCreatedAt(), user.isDeleted());
     }
 
 }

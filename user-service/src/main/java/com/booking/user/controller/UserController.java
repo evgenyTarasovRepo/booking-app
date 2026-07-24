@@ -14,6 +14,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -23,6 +24,7 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/v1/users")
 @RequiredArgsConstructor
+@Validated
 @Tag(name = "Users", description = "API for User Service")
 public class UserController {
 
@@ -43,7 +45,7 @@ public class UserController {
     @Operation(summary = "Get all users by IDs", description = "Returns list of users by IDs")
     @PostMapping("/batch")
     public ResponseEntity<List<UserDto>> getUsersByIds(@RequestBody Set<UUID> usersIds) {
-        return ResponseEntity.ok(userService.getByIds(usersIds));
+        return ResponseEntity.ok(userService.getActiveUsersByIds(usersIds));
     }
 
     @Operation(summary = "Get all users", description = "Returns a paginated list of all users")
@@ -69,7 +71,7 @@ public class UserController {
 
     @Operation(summary = "Logical delete user", description = "Change logical delete status for user")
     @PatchMapping("/{userId}/delete")
-    public ResponseEntity<UserDto> changeDeleteStateForUser(@PathVariable("userId") UUID userId, @RequestParam("deleted") Boolean deleted) {
+    public ResponseEntity<UserDto> changeDeleteStateForUser(@PathVariable("userId") UUID userId, @RequestParam("deleted") boolean deleted) {
         return ResponseEntity.ok(userService.changeDeleteStateForUser(userId, deleted));
     }
 }
