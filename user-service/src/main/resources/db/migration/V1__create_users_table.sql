@@ -4,4 +4,5 @@ CREATE TABLE IF NOT EXISTS users(
     last_name VARCHAR(255),
     email VARCHAR(255) NOT NULL UNIQUE,
     created_at TIMESTAMP NOT NULL DEFAULT NOW()
+    is_deleted BOOLEAN NOT NULL DEFAULT false
 )
