@@ -12,11 +12,13 @@ import java.util.UUID;
 @Repository
 public interface UserRepository extends JpaRepository<User, UUID> {
 
-    Optional<User> findByIdAndIsDeletedFalse(UUID userId);
+    Optional<User> findByIdAndDeletedFalse(UUID userId);
 
-    List<User> findByIdInAndIsDeletedFalse(Collection<UUID> id);
+    List<User> findByIdInAndDeletedFalse(Collection<UUID> id);
 
     Optional<User> findByEmail(String email);
 
     List<User> findByIdIn(Collection<UUID> id);
+
+    boolean existsByEmail(String email);
 }

@@ -24,7 +24,7 @@ public record UserDto(
         LocalDateTime userCreationDate,
 
         @Schema(description = "Removal status")
-        Boolean isDeleted
+        boolean isDeleted
 ) {
 
 }

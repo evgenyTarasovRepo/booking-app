@@ -17,7 +17,7 @@ public interface UserService {
 
     UserDto getById(UUID userId);
 
-    List<UserDto> getByIds(Set<UUID> userIds);
+    List<UserDto> getActiveUsersByIds(Set<UUID> userIds);
 
     UserDto getByEmail(String login);
 
@@ -25,5 +25,6 @@ public interface UserService {
 
     List<UserDto> getAllByIds(Set<UUID> ids);
 
-    UserDto changeDeleteStateForUser(UUID userId, Boolean deleteState);
+    UserDto changeDeleteStateForUser(UUID userId, boolean deleteState);
+
 }

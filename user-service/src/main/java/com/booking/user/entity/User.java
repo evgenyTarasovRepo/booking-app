@@ -36,13 +36,13 @@ public class User {
     private LocalDateTime createdAt;
 
     @Column(name = "is_deleted", nullable = false)
-    private Boolean isDeleted;
+    private boolean deleted = false;
 
-    public User(String firstName, String lastName, String email, Boolean isDeleted) {
+    public User(String firstName, String lastName, String email, boolean deleted) {
         this.firstName = firstName;
         this.lastName = lastName;
         this.email = email;
-        this.isDeleted = isDeleted;
+        this.deleted = deleted;
     }
 
     @PrePersist
@@ -55,7 +55,7 @@ public class User {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         User that = (User) o;
-        return id.equals(that.id);
+        return id != null && id.equals(that.id);
     }
 
     @Override
