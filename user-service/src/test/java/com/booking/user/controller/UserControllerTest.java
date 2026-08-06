@@ -19,6 +19,7 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -28,6 +29,7 @@ import java.util.UUID;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -168,6 +170,35 @@ public class UserControllerTest {
                 .andExpect(jsonPath("$[0].firstName").value(userDto.firstName()))
                 .andExpect(jsonPath("$[0].lastName").value(userDto.lastName()))
                 .andExpect(jsonPath("$[0].email").value(userDto.email()));
+    }
+
+    @Test
+    void getUsersByIds_BadRequestWhenRequestIsNull() throws Exception {
+
+        mockMvc.perform(post("/api/v1/users/batch")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("null"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("status").value(400))
+                .andExpect(jsonPath("$.title").value("Malformed Request"))
+                .andExpect(jsonPath("$.timestamp").exists());
+
+        verify(userService, never()).getActiveUsersByIds(any());
+    }
+
+    @Test
+    void getUsersByIds_BadRequestWhenRequestIsEmptyList() throws Exception {
+
+        mockMvc.perform(post("/api/v1/users/batch")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("[]"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("status").value(400))
+                .andExpect(jsonPath("$.title").value("Validation Error"))
+                .andExpect(jsonPath("$.invalid_params.usersIds").value("IDs list must not be empty"))
+                .andExpect(jsonPath("$.timestamp").exists());
+
+        verify(userService, never()).getActiveUsersByIds(any());
     }
 
     @Test

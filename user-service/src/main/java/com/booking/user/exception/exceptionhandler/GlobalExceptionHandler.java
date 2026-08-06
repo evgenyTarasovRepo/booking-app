@@ -6,6 +6,7 @@ import jakarta.validation.ConstraintViolationException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.*;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -39,25 +40,6 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         return createProblemDetail(ex.getMessage(), HttpStatus.CONFLICT, request);
     }
 
-    @Override
-    protected ResponseEntity<Object> handleMethodArgumentNotValid(
-            MethodArgumentNotValidException ex,
-            HttpHeaders headers,
-            HttpStatusCode status,
-            WebRequest request) {
-
-        log.warn("Validation error: {}", ex.getMessage());
-
-        Map<String, String> errors = new HashMap<>();
-        ex.getBindingResult().getFieldErrors().forEach(error ->
-                errors.put(error.getField(), error.getDefaultMessage())
-        );
-
-        ProblemDetail pd = buildValidationProblemDetail((ServletWebRequest) request, errors);
-
-        return ResponseEntity.badRequest().body(pd);
-    }
-
     @ExceptionHandler(DataIntegrityViolationException.class)
     @ResponseStatus(HttpStatus.CONFLICT)
     public ProblemDetail handleDuplicateEmail(DataIntegrityViolationException ex, WebRequest request) {
@@ -77,6 +59,42 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         });
 
         return buildValidationProblemDetail((ServletWebRequest) request, errors);
+    }
+
+    @Override
+    protected ResponseEntity<Object> handleMethodArgumentNotValid(
+            MethodArgumentNotValidException ex,
+            HttpHeaders headers,
+            HttpStatusCode status,
+            WebRequest request) {
+
+        log.warn("Validation error: {}", ex.getMessage());
+
+        Map<String, String> errors = new HashMap<>();
+        ex.getBindingResult().getFieldErrors().forEach(error ->
+                errors.put(error.getField(), error.getDefaultMessage())
+        );
+
+        ProblemDetail pd = buildValidationProblemDetail((ServletWebRequest) request, errors);
+
+        return ResponseEntity.badRequest().body(pd);
+    }
+
+    @Override
+    protected ResponseEntity<Object> handleHttpMessageNotReadable(
+            HttpMessageNotReadableException ex,
+            HttpHeaders headers,
+            HttpStatusCode status,
+            WebRequest request) {
+
+        log.warn("Malformed request body: {}", ex.getMessage());
+
+        ProblemDetail pd = ProblemDetail.forStatus(HttpStatus.BAD_REQUEST);
+        pd.setTitle("Malformed Request");
+        pd.setDetail("Request body is missing malformed");
+        pd.setProperty("timestamp", Instant.now());
+        pd.setInstance(URI.create(((ServletWebRequest) request).getRequest().getRequestURI()));
+        return ResponseEntity.badRequest().body(pd);
     }
 
     private static ProblemDetail buildValidationProblemDetail(ServletWebRequest request, Map<String, String> errors) {

@@ -9,6 +9,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotEmpty;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -44,7 +45,7 @@ public class UserController {
 
     @Operation(summary = "Get all users by IDs", description = "Returns list of users by IDs")
     @PostMapping("/batch")
-    public ResponseEntity<List<UserDto>> getUsersByIds(@RequestBody Set<UUID> usersIds) {
+    public ResponseEntity<List<UserDto>> getUsersByIds(@RequestBody @Valid @NotEmpty(message = "IDs list must not be empty") Set<UUID> usersIds) {
         return ResponseEntity.ok(userService.getActiveUsersByIds(usersIds));
     }
 
